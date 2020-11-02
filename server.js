@@ -1,5 +1,6 @@
 const path = require("path");
 const express = require("express");
+const methodOverride = require("method-override");
 const bodyParser = require("body-parser");
 const dotenv = require("dotenv");
 const morgan = require("morgan");
@@ -19,12 +20,15 @@ dotenv.config({ path: "config/config.env" });
 
 // Connect to database
 connectDB();
-
+const app = express();
+app.use(methodOverride("_method"));
 // Route files
 const auth = require("./routes/auth");
 const question = require("./routes/question");
 const quiz = require("./routes/quiz");
-const app = express();
+const attempt = require("./routes/attempt");
+const poster = require("./routes/poster");
+const result = require("./routes/result");
 
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -70,6 +74,9 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/api/auth", auth);
 app.use("/api/question", question);
 app.use("/api/quiz", quiz);
+app.use("/api/attempt", attempt);
+app.use("/api/poster", poster);
+app.use("/api/result", result);
 
 app.use(errorHandler);
 

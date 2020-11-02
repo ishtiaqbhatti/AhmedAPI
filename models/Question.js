@@ -16,6 +16,7 @@ const questionSchema = new mongoose.Schema({
       }
     }
   ],
+  attempts: Array,
   createdAt: {
     type: Date,
     default: Date.now

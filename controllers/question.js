@@ -1,4 +1,5 @@
 const asyncHandler = require("../middleware/async");
+const Attempt = require("../models/Attempt");
 const Question = require("../models/Question");
 
 // @desc    Create a Question
@@ -7,6 +8,7 @@ const Question = require("../models/Question");
 
 exports.createQuestion = asyncHandler(async (req, res, next) => {
   const { questionType, description, options } = req.body;
+
   const question = await Question.create({
     questionType,
     description,
@@ -25,6 +27,34 @@ exports.createQuestion = asyncHandler(async (req, res, next) => {
 
 exports.getAllQuestions = asyncHandler(async (req, res, next) => {
   const questions = await Question.find();
+  return res.status(200).json({
+    success: 1,
+    data: questions
+  });
+});
+
+exports.getAllQuestionsScore = asyncHandler(async (req, res, next) => {
+  const questions = await Question.find().lean();
+  for (const question of questions) {
+    const attempts = await Attempt.find({ questionId: question._id }).select(
+      "attempt"
+    );
+    let correct = 0;
+    let wrong = 0;
+    attempts.forEach((attempt) => {
+      if (attempt.attempt === true) correct = correct + 1;
+      else wrong = wrong + 1;
+    });
+    let failRate = 0;
+    let passRate = 0;
+    if (wrong !== 0) failRate = ((attempts.length / wrong) * 100).toFixed(3);
+    if (correct !== 0)
+      passRate = ((attempts.length / correct) * 100).toFixed(3);
+
+    question.failRate = failRate;
+    question.passRate = passRate;
+  }
+
   return res.status(200).json({
     success: 1,
     data: questions

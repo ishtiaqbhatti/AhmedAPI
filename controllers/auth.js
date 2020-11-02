@@ -57,6 +57,61 @@ exports.logout = asyncHandler(async (req, res, next) => {
   });
 });
 
+// Get Users
+
+exports.getUsers = asyncHandler(async (req, res, next) => {
+  const users = await User.find({});
+  res.status(200).json({
+    success: true,
+    data: users
+  });
+});
+
+// Get User by Id
+
+exports.getUserById = asyncHandler(async (req, res, next) => {
+  const user = await User.find({ _id: req.params.id });
+  res.status(200).json({
+    success: true,
+    data: user
+  });
+});
+
+// Update User
+exports.updateUserById = asyncHandler(async (req, res, next) => {
+  const id = req.params.id;
+  const { userData } = req.body;
+  const user = await User.findOneAndUpdate({ _id: id }, userData);
+  res.status(200).json({
+    success: true,
+    data: user
+  });
+});
+
+// Delete User
+exports.deleteUserById = asyncHandler(async (req, res, next) => {
+  const id = req.params.id;
+  const { userData } = req.body;
+  const user = await User.findOneAndDelete({ _id: id }, userData);
+  res.status(200).json({
+    success: true,
+    data: user
+  });
+});
+
+// Get Employee Stats
+exports.getUserStats = asyncHandler(async (req, res, next) => {
+  const stats = await User.aggregate([
+    { $match: {} },
+    { $group: { _id: "$role", total: { $sum: 1 } } }
+  ]);
+
+  res.status(200).json({
+    success: true,
+    data: stats
+  });
+});
+
 // Get token from model, create cookie and send response
 const sendTokenResponse = (user, statusCode, res) => {
   // Create token

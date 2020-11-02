@@ -1,4 +1,5 @@
 const asyncHandler = require("../middleware/async");
+const Question = require("../models/Question");
 
 const Quiz = require("../models/Quiz");
 // @desc    Create a Quiz
@@ -24,12 +25,14 @@ exports.createQuiz = asyncHandler(async (req, res, next) => {
 // @access  ADMIN
 
 exports.getAllQuiz = asyncHandler(async (req, res, next) => {
-  const questions = await Quiz.find().aggregate({
-    $project: { NumberOfItemsInArray: { $size: "$questionIds" } }
-  });
+  const allQuiz = await Quiz.find().populate("questionIds");
+
+  // .aggregate({
+  //   $project: { NumberOfItemsInArray: { $size: "$questionIds" } }
+  // });
   return res.status(200).json({
     success: 1,
-    data: questions
+    data: allQuiz
   });
 });
 
@@ -45,20 +48,20 @@ exports.getQuizById = asyncHandler(async (req, res, next) => {
   });
 });
 
-// @desc    Update Quiz by Quiz ID
+// @desc    Update Quiz by Quiz ID (Assign/Unassign)
 // @route   PUT /api/quiz/:qid
 // @access  ADMIN
 exports.updateQuizById = asyncHandler(async (req, res, next) => {
   const id = req.params.qid;
+  console.log("ID", id);
   const quizObject = {};
   if (req.body.name) quizObject.name = req.body.name;
   if (req.body.description) quizObject.description = req.body.description;
-  if (req.body.questionIds)
+  if (req.body.type === "assign")
     quizObject.$addToSet = { questionIds: req.body.questionIds };
-
-  const quiz = await Quiz.findByIdAndUpdate(id, {
-    quizObject
-  });
+  else quizObject.$pullAll = { questionIds: req.body.questionIds };
+  if (req.body.questionIds) console.log("QUIZ OBJECT", quizObject);
+  const quiz = await Quiz.findByIdAndUpdate(id, quizObject);
   return res.status(200).json({
     success: 1,
     data: quiz
@@ -68,10 +71,35 @@ exports.updateQuizById = asyncHandler(async (req, res, next) => {
 // @desc    Delete Question by Question ID
 // @route   DELETE /api/question/:qid
 // @access  ADMIN
-// exports.deleteQuestionById = asyncHandler(async (req, res, next) => {
-//   const id = req.params.qid;
-//   await Question.findByIdAndDelete(id);
-//   return res.status(204).json({
-//     success: 1
-//   });
-// });
+exports.deleteQuizById = asyncHandler(async (req, res, next) => {
+  const id = req.params.qid;
+  await Question.findByIdAndDelete(id);
+  return res.status(204).json({
+    success: 1
+  });
+});
+
+// Set Quiz to Active/Non-Active
+exports.setQuizStatus = asyncHandler(async (req, res, next) => {
+  const { status } = req.body;
+  const { qid } = req.params;
+
+  await Quiz.findOneAndUpdate({ _id: qid }, { status });
+  return res.status(200).json({
+    success: 1
+  });
+});
+
+// Active and Non-Active quizes
+exports.getQuizStats = asyncHandler(async (req, res, next) => {
+  const activeQuiz = await Quiz.find({ status: true });
+  const nonActiveQuiz = await Quiz.find({ status: false });
+  const data = {
+    active: activeQuiz.length,
+    nonActive: nonActiveQuiz.length
+  };
+  return res.status(200).json({
+    success: 1,
+    data
+  });
+});

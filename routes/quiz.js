@@ -3,7 +3,10 @@ const {
   createQuiz,
   getAllQuiz,
   getQuizById,
-  updateQuizById
+  updateQuizById,
+  deleteQuizById,
+  setQuizStatus,
+  getQuizStats
 } = require("../controllers/quiz");
 const { protect } = require("../middleware/auth");
 
@@ -13,6 +16,8 @@ router.post("/", createQuiz);
 router.get("/", getAllQuiz);
 router.get("/:qid", getQuizById);
 router.put("/:qid", updateQuizById);
-// router.delete("/:qid", deleteQuestion);
+router.delete("/:qid", deleteQuizById);
+router.put("/status/:id", setQuizStatus);
+router.get("/stats", getQuizStats);
 
 module.exports = router;

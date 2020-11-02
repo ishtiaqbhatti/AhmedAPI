@@ -3,103 +3,55 @@ const Question = require("../models/Question");
 
 const Attempt = require("../models/Attempt");
 const Result = require("../models/Result");
-// @desc    Create a Quiz
-// @route   POST /api/quiz
-// @access  ADMIN
 
 exports.createAttempt = asyncHandler(async (req, res, next) => {
-  const { quizId, employeeId, questionId, answer } = req.body;
-  const attempt = Question.findOne({ "options.text": answer });
+  const { quizId, questionId, answer } = req.body;
+  const question = await Question.findById(questionId);
+  const attemptResult = question.options.filter(
+    (option) => option.text === answer
+  );
 
-  const createdAttempt = Attempt.create({
+  const createdAttempt = await Attempt.create({
     quizId,
-    employeeId,
+    employeeId: req.user._id,
     questionId,
-    attempt: attempt.isCorrect
+    attempt: attemptResult[0].isCorrect
   });
-
+  console.log("CREATEDATTEMPT", createdAttempt);
   // Create Result in case of no result found
 
-  const resultFound = Result.findOne({ $and: [{ quizId }, { employeeId }] });
+  const resultFound = await Result.findOne({
+    $and: [{ quizId }, { employeeId: req.user._id }]
+  });
   if (!resultFound) {
     const createResult = await Result.create({
       quizId,
-      employeeId,
-      $push: { attemptIds: createdAttempt._id },
-      score: attempt.isCorrect ? 1 : 0
+      employeeId: req.user._id,
+      score: attemptResult[0].isCorrect ? 1 : 0,
+      attemptIds: [createdAttempt._id]
     });
   } else {
-    const updatedResult = Result.findOneAndUpdate(
-      { _id: resultFound._id },
-      {
-        score: attempt.isCorrect ? score++ : score--
-      },
-      {
-        $addToSet: { attemptIds: createdAttempt._id }
-      }
-    );
+    let score = resultFound.score;
+    if (attemptResult[0].isCorrect) score = score + 1;
+    const updatedResult = await Result.findOneAndUpdate({
+      _id: resultFound._id,
+      score,
+      $addToSet: { attemptIds: createdAttempt._id }
+    });
   }
 
-  return res.status(201).json({
-    success: 1,
-    message: `Quiz with id ${quiz._id} created`,
-    data: quiz
-  });
-});
-
-// @desc    Get All Quiz
-// @route   GET /api/quiz
-// @access  ADMIN
-
-exports.getAllQuiz = asyncHandler(async (req, res, next) => {
-  const questions = await Quiz.find().aggregate({
-    $project: { NumberOfItemsInArray: { $size: "$questionIds" } }
-  });
   return res.status(200).json({
     success: 1,
-    data: questions
+    data: updatedResult
   });
 });
 
-// @desc    Get Question By Question ID
-// @route   GET /api/question/:qid
-// @access  ADMIN
-exports.getQuestionById = asyncHandler(async (req, res, next) => {
-  const id = req.params.qid;
-  const question = await Question.findById(id);
+exports.getAllAttempts = asyncHandler(async (req, res, next) => {
+  const attemps = await Attempt.find({}).populate(
+    "quizId employeeId questionId"
+  );
   return res.status(200).json({
     success: 1,
-    data: question
+    data: attemps
   });
 });
-
-// @desc    Update Quiz by Quiz ID
-// @route   PUT /api/quiz/:qid
-// @access  ADMIN
-exports.updateQuizById = asyncHandler(async (req, res, next) => {
-  const id = req.params.qid;
-  const quizObject = {};
-  if (req.body.name) quizObject.name = req.body.name;
-  if (req.body.description) quizObject.description = req.body.description;
-  if (req.body.questionIds)
-    quizObject.$addToSet = { questionIds: req.body.questionIds };
-
-  const quiz = await Quiz.findByIdAndUpdate(id, {
-    quizObject
-  });
-  return res.status(200).json({
-    success: 1,
-    data: quiz
-  });
-});
-
-// @desc    Delete Question by Question ID
-// @route   DELETE /api/question/:qid
-// @access  ADMIN
-// exports.deleteQuestionById = asyncHandler(async (req, res, next) => {
-//   const id = req.params.qid;
-//   await Question.findByIdAndDelete(id);
-//   return res.status(204).json({
-//     success: 1
-//   });
-// });

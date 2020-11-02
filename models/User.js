@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema({
     minlength: 6
   },
   role: { type: String, enum: ["admin", "employee"] },
+  department: String,
   createdAt: {
     type: Date,
     default: Date.now
