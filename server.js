@@ -12,6 +12,8 @@ const xss = require("xss-clean");
 const rateLimit = require("express-rate-limit");
 const hpp = require("hpp");
 const cors = require("cors");
+const swaggerJsDoc = require("swagger-jsdoc");
+const swaggerUi = require("swagger-ui-express");
 const errorHandler = require("./middleware/error");
 const connectDB = require("./config/db");
 
@@ -23,6 +25,29 @@ connectDB();
 const app = express();
 app.use(methodOverride("_method"));
 // Route files
+
+// Swagger
+const swaggerOptions = {
+  swaggerDefinition: {
+    info: {
+      title: "Quiz API",
+      description: "API for Quiz built in Nodejs",
+      servers: [`http://localhost:${process.env.PORT}`]
+    }
+  },
+  apis: [
+    "server.js",
+    "routes/auth.js",
+    "routes/question.js",
+    "routes/attempt.js",
+    "routes/quiz.js",
+    "routes/result.js",
+    "routes/poster.js"
+  ]
+};
+
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 const auth = require("./routes/auth");
 const question = require("./routes/question");
 const quiz = require("./routes/quiz");
@@ -71,6 +96,15 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // Mount routers
 // app.use("/api/v1/auth", auth);
+// /**
+//  * @swagger
+//  * /api/auth/users:
+//  *  get:
+//  *    description: Use to request all customers
+//  *    responses:
+//  *      '200':
+//  *        description: A successful response
+//  */
 app.use("/api/auth", auth);
 app.use("/api/question", question);
 app.use("/api/quiz", quiz);

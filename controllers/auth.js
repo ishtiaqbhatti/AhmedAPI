@@ -1,16 +1,20 @@
 const asyncHandler = require("../middleware/async");
 
 const User = require("../models/User");
+const ErrorResponse = require("../utils/errorResponse");
 
 // @desc    Register User (Roles: employee, admin)
 // @oute    POST /api/auth/register
 // @access  Public
 
 exports.registerUser = asyncHandler(async (req, res, next) => {
-  const { userName, password, role } = req.body;
+  const { userData } = req.body;
 
+  // Check if user already exists
+  const isFound = await User.findOne({ userName });
+  if (isFound) return next(new ErrorResponse("User already exists", 409));
   // Create user
-  const user = await User.create({ userName, password, role });
+  const user = await User.create({ userData });
   return res.status(200).json({
     success: 1,
     message: `User with role ${user.role} successfully created`

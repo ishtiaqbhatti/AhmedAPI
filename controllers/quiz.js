@@ -7,11 +7,16 @@ const Quiz = require("../models/Quiz");
 // @access  ADMIN
 
 exports.createQuiz = asyncHandler(async (req, res, next) => {
-  const { name, description, questionIds } = req.body;
+  const { name, description, questionIds, status } = req.body;
+
+  // Check if quiz already exists
+  const isFound = await Quiz.findOne({ name });
+  if (isFound) return next(new ErrorResponse("Quiz already exists", 409));
   const quiz = await Quiz.create({
     name,
     description,
-    questionIds
+    questionIds,
+    status
   });
   return res.status(201).json({
     success: 1,
@@ -40,7 +45,7 @@ exports.getAllQuiz = asyncHandler(async (req, res, next) => {
 // @route   GET /api/quiz/:qid
 // @access  ADMIN
 exports.getQuizById = asyncHandler(async (req, res, next) => {
-  const id = req.params.qid;
+  const id = req.params.id;
   const quiz = await Quiz.findById(id).populate("questionIds");
   return res.status(200).json({
     success: 1,
@@ -52,7 +57,7 @@ exports.getQuizById = asyncHandler(async (req, res, next) => {
 // @route   PUT /api/quiz/:qid
 // @access  ADMIN
 exports.updateQuizById = asyncHandler(async (req, res, next) => {
-  const id = req.params.qid;
+  const id = req.params.id;
   console.log("ID", id);
   const quizObject = {};
   if (req.body.name) quizObject.name = req.body.name;
@@ -62,7 +67,7 @@ exports.updateQuizById = asyncHandler(async (req, res, next) => {
   else quizObject.$pullAll = { questionIds: req.body.questionIds };
   if (req.body.questionIds) console.log("QUIZ OBJECT", quizObject);
   const quiz = await Quiz.findByIdAndUpdate(id, quizObject);
-  return res.status(200).json({
+  return res.status(201).json({
     success: 1,
     data: quiz
   });
@@ -72,7 +77,7 @@ exports.updateQuizById = asyncHandler(async (req, res, next) => {
 // @route   DELETE /api/question/:qid
 // @access  ADMIN
 exports.deleteQuizById = asyncHandler(async (req, res, next) => {
-  const id = req.params.qid;
+  const id = req.params.id;
   await Question.findByIdAndDelete(id);
   return res.status(204).json({
     success: 1
@@ -82,9 +87,9 @@ exports.deleteQuizById = asyncHandler(async (req, res, next) => {
 // Set Quiz to Active/Non-Active
 exports.setQuizStatus = asyncHandler(async (req, res, next) => {
   const { status } = req.body;
-  const { qid } = req.params;
+  const { id } = req.params;
 
-  await Quiz.findOneAndUpdate({ _id: qid }, { status });
+  await Quiz.findOneAndUpdate({ _id: id }, { status });
   return res.status(200).json({
     success: 1
   });

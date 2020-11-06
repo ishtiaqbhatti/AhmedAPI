@@ -1,16 +1,20 @@
 const express = require("express");
 const posterRouter = express.Router();
+const mongoose = require("mongoose");
 const path = require("path");
 const multer = require("multer");
 const GridFsStorage = require("multer-gridfs-storage");
+const Grid = require("gridfs-stream");
+Grid.mongo = mongoose.mongo;
+
 const crypto = require("crypto");
-const mongoose = require("mongoose");
+
 mongoose.Promise = require("bluebird");
 const Poster = require("../models/Poster");
 
 const url = process.env.MONGO_URI;
 // create storage engine
-console.log("REACHED 1");
+
 const storage = new GridFsStorage({
   url,
   file: (req, file) => {
@@ -41,12 +45,11 @@ const connect = mongoose.createConnection(url, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 });
-
 let gfs;
 console.log("REACHED 3");
 connect.once("open", () => {
   // initialize stream
-  gfs = new mongoose.mongo.GridFSBucket(connect.db, {
+  gfs = Grid(mongoose.connection.db, {
     bucketName: "posters"
   });
 });
@@ -56,6 +59,45 @@ console.log("REACHED 4");
         POST: Upload a single image/file to Image collection
     */
 
+/**
+ * @swagger
+ * /api/poster:
+ *  post:
+ *    tags:
+ *     - Poster
+ *    description: Uploads a Poster
+ *    consumes:
+ *     - multipart/form-data
+ *    parameters:
+ *     - in: formData
+ *       name: file
+ *       type: file
+ *       description: Image to Upload
+ *     - in: body
+ *       name: imageData
+ *       description: Title
+ *       schema:
+ *        type: object
+ *        required:
+ *         - title
+ *        properties:
+ *         title:
+ *          type: string
+ *    responses:
+ *      '201':
+ *        description: User created
+ *      '409':
+ *        description: User already exists
+ *      '400':
+ *        description: Bad request
+ *  get:
+ *   tags:
+ *    - Poster
+ *   description: Get All Posters in the collection
+ *   responses:
+ *    '200':
+ *      description: A successful response
+ */
 posterRouter
   .route("/")
   .post(upload.single("file"), (req, res, next) => {
@@ -101,33 +143,6 @@ posterRouter
       .catch((err) => res.status(500).json(err));
   });
 
-/*
-        GET: Delete an image from the collection
-    */
-posterRouter.route("/delete/:id").get((req, res, next) => {
-  Poster.findOne({ _id: req.params.id })
-    .then((image) => {
-      if (image) {
-        Poster.deleteOne({ _id: req.params.id })
-          .then(() => {
-            return res.status(200).json({
-              success: true,
-              message: `File with ID: ${req.params.id} deleted`
-            });
-          })
-          .catch((err) => {
-            return res.status(500).json(err);
-          });
-      } else {
-        res.status(200).json({
-          success: false,
-          message: `File with ID: ${req.params.id} not found`
-        });
-      }
-    })
-    .catch((err) => res.status(500).json(err));
-});
-
 posterRouter
   .route("/multiple")
   .post(upload.array("file", 3), (req, res, next) => {
@@ -137,11 +152,25 @@ posterRouter
     });
   });
 
+/**
+ * @swagger
+ * /api/poster/files:
+ *  get:
+ *    tags:
+ *     - Poster
+ *    description: Get all images from Gridfs
+ *    responses:
+ *      '200':
+ *        description: A successful response
+ *      '404':
+ *        description: Not Found
+ */
+
 /*
         GET: Fetches all the files in the uploads collection
     */
 posterRouter.route("/files").get((req, res, next) => {
-  gfs.find().toArray((err, files) => {
+  gfs.files.find().toArray((err, files) => {
     if (!files || files.length === 0) {
       return res.status(200).json({
         success: false,
@@ -168,11 +197,30 @@ posterRouter.route("/files").get((req, res, next) => {
   });
 });
 
+/**
+ * @swagger
+ * /api/poster/image/{filename}:
+ *  get:
+ *    tags:
+ *     - Poster
+ *    description: Get a Image by filename
+ *    parameters:
+ *     - in: path
+ *       name: filename
+ *       schema:
+ *         type: string
+ *       required: true
+ *    responses:
+ *      '200':
+ *        description: A successful response
+ *      '404':
+ *        description: Not Found
+ */
 /* 
         GET: Fetches a particular image and render on browser
     */
 posterRouter.route("/image/:filename").get((req, res, next) => {
-  gfs.find({ filename: req.params.filename }).toArray((err, files) => {
+  gfs.files.find({ filename: req.params.filename }).toArray((err, files) => {
     if (!files[0] || files.length === 0) {
       return res.status(200).json({
         success: false,
@@ -186,8 +234,15 @@ posterRouter.route("/image/:filename").get((req, res, next) => {
       files[0].contentType === "image/png" ||
       files[0].contentType === "image/svg+xml"
     ) {
+      console.log("files", files);
+      var readstream = gfs.createReadStream({
+        filename: files[0].filename
+      });
+      res.set("Content-Type", files[0].contentType);
+      return readstream.pipe(res);
       // render image to browser
-      gfs.openDownloadStreamByName(req.params.filename).pipe(res);
+      // res.content_type = files[0].contentType;
+      // gfs.openDownloadStreamByName(req.params.filename).pipe(res);
     } else {
       res.status(404).json({
         err: "Not an image"
@@ -199,6 +254,27 @@ posterRouter.route("/image/:filename").get((req, res, next) => {
   // });
   // res.pipe(readstream);
 });
+
+/**
+ * @swagger
+ * /api/poster/file/del/{id}:
+ *  delete:
+ *    tags:
+ *     - Poster
+ *    description: Delete Image by Id
+ *    parameters:
+ *     - in: path
+ *       name: id
+ *       schema:
+ *         type: ObjectId
+ *       required: true
+ *       description: Mongoose Object ID
+ *    responses:
+ *      '200':
+ *        description: A successful response
+ *      '404':
+ *        description: Not Found
+ */
 
 /*
         DELETE: Delete a particular file by an ID
@@ -215,6 +291,54 @@ posterRouter.route("/file/del/:id").post((req, res, next) => {
       message: `File with ID ${req.params.id} is deleted`
     });
   });
+});
+
+/**
+ * @swagger
+ * /api/poster/delete/{id}:
+ *  delete:
+ *    tags:
+ *     - Poster
+ *    description: Delete Image by Id in the collection
+ *    parameters:
+ *     - in: path
+ *       name: id
+ *       schema:
+ *         type: ObjectId
+ *       required: true
+ *       description: Mongoose Object ID
+ *    responses:
+ *      '200':
+ *        description: A successful response
+ *      '404':
+ *        description: Not Found
+ */
+
+/*
+        GET: Delete an image from the collection
+    */
+posterRouter.route("/delete/:id").get((req, res, next) => {
+  Poster.findOne({ _id: req.params.id })
+    .then((image) => {
+      if (image) {
+        Poster.deleteOne({ _id: req.params.id })
+          .then(() => {
+            return res.status(200).json({
+              success: true,
+              message: `File with ID: ${req.params.id} deleted`
+            });
+          })
+          .catch((err) => {
+            return res.status(500).json(err);
+          });
+      } else {
+        res.status(200).json({
+          success: false,
+          message: `File with ID: ${req.params.id} not found`
+        });
+      }
+    })
+    .catch((err) => res.status(500).json(err));
 });
 
 module.exports = posterRouter;

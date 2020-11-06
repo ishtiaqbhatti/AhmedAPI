@@ -17,9 +17,9 @@ exports.getAllResults = asyncHandler(async (req, res, next) => {
 });
 
 exports.getScorebyEmployee = asyncHandler(async (req, res, next) => {
-  const id = req.params.eid;
+  const id = req.params.id;
   const results = await Result.find({ employeeId: id }).populate(
-    "quizId employeeId attemptIds"
+    "quizId employeeId"
   );
   results.forEach((result, i) => {
     const scorePercentage = (
@@ -35,7 +35,7 @@ exports.getScorebyEmployee = asyncHandler(async (req, res, next) => {
   });
 });
 
-exports.getAttemptStats = asyncHandler(async (req, res, next) => {
+exports.getEmployeeAttemptStats = asyncHandler(async (req, res, next) => {
   const attemptStats = await Result.find().populate("attemptIds employeeId");
   let results = [];
   const data = attemptStats.forEach((attempt) => {
@@ -79,7 +79,6 @@ exports.getQuizStats = asyncHandler(async (req, res, next) => {
   let results = [];
   const data = attemptStats.forEach((attempt) => {
     const quiz = attempt.quizId;
-    const user = [];
     let pass = 0;
     let fail = 0;
     const attempts = attempt.attemptIds.forEach((attempt) => {
@@ -87,21 +86,19 @@ exports.getQuizStats = asyncHandler(async (req, res, next) => {
       else fail = fail + 1;
     });
 
-    let isUserAlreadyExists = results.findIndex(
-      (x) => x.user._id === attempt.employeeId._id
+    let isQuizAlreadyExists = results.findIndex(
+      (x) => x.quiz._id === attempt.quizId._id
     );
 
-    if (isUserAlreadyExists >= 0) {
-      console.log(results);
-      console.log("IS USER ALREADY EXIST", isUserAlreadyExists);
-      results[isUserAlreadyExists].pass =
-        results[isUserAlreadyExists].pass + pass;
-      results[isUserAlreadyExists].fail =
-        results[isUserAlreadyExists].fail + fail;
-      results[isUserAlreadyExists].total =
-        results[isUserAlreadyExists].pass + results[isUserAlreadyExists].fail;
+    if (isQuizAlreadyExists >= 0) {
+      results[isQuizAlreadyExists].pass =
+        results[isQuizAlreadyExists].pass + pass;
+      results[isQuizAlreadyExists].fail =
+        results[isQuizAlreadyExists].fail + fail;
+      results[isQuizAlreadyExists].total =
+        results[isQuizAlreadyExists].pass + results[isQuizAlreadyExists].fail;
     } else {
-      results.push({ user, pass, fail, total: pass + fail });
+      results.push({ quiz, pass, fail, total: pass + fail });
     }
   });
 

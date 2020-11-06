@@ -6,6 +6,17 @@ const Result = require("../models/Result");
 
 exports.createAttempt = asyncHandler(async (req, res, next) => {
   const { quizId, questionId, answer } = req.body;
+  const isFound = await Attempt.findOne({
+    $and: [
+      {
+        quizId,
+        questionId,
+        answer
+      }
+    ]
+  });
+  // Check if attempt already exists
+  if (isFound) return next(new ErrorResponse("Attempt already exists", 409));
   const question = await Question.findById(questionId);
   const attemptResult = question.options.filter(
     (option) => option.text === answer
@@ -40,9 +51,8 @@ exports.createAttempt = asyncHandler(async (req, res, next) => {
     });
   }
 
-  return res.status(200).json({
-    success: 1,
-    data: updatedResult
+  return res.status(201).json({
+    success: 1
   });
 });
 

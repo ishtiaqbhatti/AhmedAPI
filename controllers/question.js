@@ -8,7 +8,9 @@ const Question = require("../models/Question");
 
 exports.createQuestion = asyncHandler(async (req, res, next) => {
   const { questionType, description, options } = req.body;
-
+  // Check if question already exists
+  const isFound = await Question.findOne({ description });
+  if (isFound) return next(new ErrorResponse("Question already exists", 409));
   const question = await Question.create({
     questionType,
     description,
@@ -77,7 +79,8 @@ exports.getQuestionById = asyncHandler(async (req, res, next) => {
 // @route   PUT /api/question/:qid
 // @access  ADMIN
 exports.updateQuestionById = asyncHandler(async (req, res, next) => {
-  const id = req.params.qid;
+  const id = req.params && req.params.id ? req.params.id : "";
+  if (!id) return next(new ErrorResponse("ID Not provided, Bad Request", 400));
   const { questionType, description, options } = req.body;
   const question = await Question.findByIdAndUpdate(id, {
     questionType,
@@ -94,7 +97,8 @@ exports.updateQuestionById = asyncHandler(async (req, res, next) => {
 // @route   DELETE /api/question/:qid
 // @access  ADMIN
 exports.deleteQuestionById = asyncHandler(async (req, res, next) => {
-  const id = req.params.qid;
+  const id = req.params && req.params.id ? req.params.id : "";
+  if (!id) return next(new ErrorResponse("ID Not provided, Bad Request", 400));
   await Question.findByIdAndDelete(id);
   return res.status(204).json({
     success: 1
