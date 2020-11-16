@@ -8,13 +8,12 @@ const ErrorResponse = require("../utils/errorResponse");
 // @access  Public
 
 exports.registerUser = asyncHandler(async (req, res, next) => {
-  const { userData } = req.body;
-
+  const { userName, password, role, department } = req.body;
   // Check if user already exists
   const isFound = await User.findOne({ userName });
   if (isFound) return next(new ErrorResponse("User already exists", 409));
   // Create user
-  const user = await User.create({ userData });
+  const user = await User.create({ userName, password, role, department });
   return res.status(200).json({
     success: 1,
     message: `User with role ${user.role} successfully created`

@@ -43,7 +43,17 @@ const swaggerOptions = {
     "routes/quiz.js",
     "routes/result.js",
     "routes/poster.js"
-  ]
+  ],
+  components: {
+    bearerAuth: {
+      type: "http",
+      schema: "bearer",
+      bearerFormat: "JWT"
+    }
+  },
+  security: {
+    bearerAuth: []
+  }
 };
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);

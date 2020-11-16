@@ -11,7 +11,7 @@ const {
   updateUserById,
   deleteUserById
 } = require("../controllers/auth");
-const { protect } = require("../middleware/auth");
+const { protect, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 /**
@@ -86,12 +86,17 @@ router.post("/logout", logout);
  *  get:
  *    tags:
  *     - User
- *    description: Use to request all customers
+ *    description: Use to get list of all users
+ *    parameters:
+ *      - in: header
+ *        name: authorization
+ *        description: An authorization header (Bearer {{JWT}})
+ *        type: String
  *    responses:
  *      '200':
  *        description: A successful response
  */
-router.get("/users", getUsers);
+router.get("/users", protect, authorize("admin"), getUsers);
 /**
  * @swagger
  * /api/auth/users/stats:
@@ -100,6 +105,10 @@ router.get("/users", getUsers);
  *     - User
  *    description: Get number of users by each role
  *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *     - in: path
  *       name: id
  *       schema:
@@ -112,7 +121,7 @@ router.get("/users", getUsers);
  *      '404':
  *        description: Not Found
  */
-router.get("/users/stats", getUserStats);
+router.get("/users/stats", protect, authorize("admin"), getUserStats);
 /**
  * @swagger
  * /api/auth/user/{id}:
@@ -121,6 +130,10 @@ router.get("/users/stats", getUserStats);
  *     - User
  *    description: Get a user by ID
  *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *     - in: path
  *       name: id
  *       schema:
@@ -133,7 +146,7 @@ router.get("/users/stats", getUserStats);
  *      '404':
  *        description: Not Found
  */
-router.get("/user/:id", getUserById);
+router.get("/user/:id", protect, authorize("admin"), getUserById);
 
 /**
  * @swagger
@@ -143,6 +156,10 @@ router.get("/user/:id", getUserById);
  *     - User
  *    description: Update User by ID
  *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *     - in: path
  *       name: id
  *       schema:
@@ -169,7 +186,7 @@ router.get("/user/:id", getUserById);
  *      '404':
  *        description: Not Found
  */
-router.put("/user/:id", updateUserById);
+router.put("/user/:id", protect, authorize("admin"), updateUserById);
 /**
  * @swagger
  * /api/auth/user/{id}:
@@ -178,6 +195,10 @@ router.put("/user/:id", updateUserById);
  *     - User
  *    description: Delete User By Id
  *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *     - in: path
  *       name: id
  *       schema:
@@ -190,5 +211,5 @@ router.put("/user/:id", updateUserById);
  *      '404':
  *        description: Not Found
  */
-router.delete("/user/:id", deleteUserById);
+router.delete("/user/:id", protect, authorize("admin"), deleteUserById);
 module.exports = router;

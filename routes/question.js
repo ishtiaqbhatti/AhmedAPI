@@ -7,7 +7,7 @@ const {
   updateQuestionById,
   deleteQuestionById
 } = require("../controllers/question");
-const { protect } = require("../middleware/auth");
+const { protect, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -19,6 +19,10 @@ const router = express.Router();
  *     - Question
  *    description: Creates a new question
  *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *     - in: body
  *       name: questionData
  *       description: The Question object to create
@@ -51,7 +55,7 @@ const router = express.Router();
  *        description: Bad request
  */
 
-router.post("/", createQuestion);
+router.post("/", protect, authorize("admin"), createQuestion);
 /**
  * @swagger
  * /api/question:
@@ -59,11 +63,16 @@ router.post("/", createQuestion);
  *    tags:
  *     - Question
  *    description: Get All Questions
+ *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *    responses:
  *      '200':
  *        description: A successful response
  */
-router.get("/", getAllQuestions);
+router.get("/", protect, authorize("admin"), getAllQuestions);
 /**
  * @swagger
  * /api/question/{id}:
@@ -72,6 +81,10 @@ router.get("/", getAllQuestions);
  *     - Question
  *    description: Get a question by ID
  *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *     - in: path
  *       name: id
  *       schema:
@@ -84,7 +97,7 @@ router.get("/", getAllQuestions);
  *      '404':
  *        description: Not Found
  */
-router.get("/:id", getQuestionById);
+router.get("/:id", protect, authorize("admin", "employee"), getQuestionById);
 /**
  * @swagger
  * /api/question/all/score:
@@ -92,11 +105,16 @@ router.get("/:id", getQuestionById);
  *    tags:
  *     - Question
  *    description: Get All Questions Score
+ *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *    responses:
  *      '200':
  *        description: A successful response
  */
-router.get("/all/score", getAllQuestionsScore);
+router.get("/all/score", protect, authorize("admin"), getAllQuestionsScore);
 
 /**
  * @swagger
@@ -106,6 +124,10 @@ router.get("/all/score", getAllQuestionsScore);
  *     - Question
  *    description: Update Question by ID
  *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *     - in: body
  *       name: questionData
  *       description: The Question object to create
@@ -141,7 +163,7 @@ router.get("/all/score", getAllQuestionsScore);
  *      '400':
  *        description: Bad request
  */
-router.put("/:id", updateQuestionById);
+router.put("/:id", protect, authorize("admin"), updateQuestionById);
 /**
  * @swagger
  * /api/question/{id}:
@@ -150,6 +172,10 @@ router.put("/:id", updateQuestionById);
  *     - Question
  *    description: Delete Question by ID
  *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *     - in: path
  *       name: id
  *       schema:
@@ -162,6 +188,6 @@ router.put("/:id", updateQuestionById);
  *      '404':
  *        description: Not Found
  */
-router.delete("/:id", deleteQuestionById);
+router.delete("/:id", protect, authorize("admin"), deleteQuestionById);
 
 module.exports = router;

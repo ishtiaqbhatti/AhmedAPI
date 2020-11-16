@@ -1,18 +1,18 @@
-const jwt = require('jsonwebtoken');
-const asyncHandler = require('./async');
-const ErrorResponse = require('../utils/errorResponse');
-const User = require('../models/User');
+const jwt = require("jsonwebtoken");
+const asyncHandler = require("./async");
+const ErrorResponse = require("../utils/errorResponse");
+const User = require("../models/User");
 
 // Protect routes
 exports.protect = asyncHandler(async (req, res, next) => {
   let token;
-
+  console.log(req.headers.authorization);
   if (
     req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
+    req.headers.authorization.startsWith("Bearer")
   ) {
     // Set token from Bearer token in header
-    token = req.headers.authorization.split(' ')[1];
+    token = req.headers.authorization.split(" ")[1];
     // Set token from cookie
   }
   // else if (req.cookies.token) {
@@ -21,7 +21,7 @@ exports.protect = asyncHandler(async (req, res, next) => {
 
   // Make sure token exists
   if (!token) {
-    return next(new ErrorResponse('Not authorized to access this route', 401));
+    return next(new ErrorResponse("Not authorized to access this route", 401));
   }
 
   try {
@@ -32,7 +32,7 @@ exports.protect = asyncHandler(async (req, res, next) => {
 
     next();
   } catch (err) {
-    return next(new ErrorResponse('Not authorized to access this route', 401));
+    return next(new ErrorResponse("Not authorized to access this route", 401));
   }
 });
 

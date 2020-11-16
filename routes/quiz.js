@@ -8,7 +8,7 @@ const {
   setQuizStatus,
   getQuizStats
 } = require("../controllers/quiz");
-const { protect } = require("../middleware/auth");
+const { protect, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -20,6 +20,10 @@ const router = express.Router();
  *     - Quiz
  *    description: Creates a new quiz
  *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *     - in: body
  *       name: quizData
  *       description: The Quiz object to create
@@ -47,7 +51,7 @@ const router = express.Router();
  *      '400':
  *        description: Bad request
  */
-router.post("/", createQuiz);
+router.post("/", protect, authorize("admin"), createQuiz);
 /**
  * @swagger
  * /api/quiz:
@@ -55,11 +59,16 @@ router.post("/", createQuiz);
  *    tags:
  *     - Quiz
  *    description: Get All Quiz's
+ *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *    responses:
  *      '200':
  *        description: A successful response
  */
-router.get("/", getAllQuiz);
+router.get("/", protect, authorize("admin"), getAllQuiz);
 /**
  * @swagger
  * /api/quiz/{id}:
@@ -68,6 +77,10 @@ router.get("/", getAllQuiz);
  *     - Quiz
  *    description: Get a quiz by ID
  *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *     - in: path
  *       name: id
  *       schema:
@@ -80,7 +93,7 @@ router.get("/", getAllQuiz);
  *      '404':
  *        description: Not Found
  */
-router.get("/:id", getQuizById);
+router.get("/:id", protect, authorize("admin", "employee"), getQuizById);
 
 /**
  * @swagger
@@ -89,13 +102,18 @@ router.get("/:id", getQuizById);
  *    tags:
  *     - Quiz
  *    description: Get Quiz Stats (Active/Non-Active)
+ *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *    responses:
  *      '200':
  *        description: A successful response
  *      '404':
  *        description: Not Found
  */
-router.get("/all/stats", getQuizStats);
+router.get("/all/stats", protect, authorize("admin"), getQuizStats);
 
 /**
  * @swagger
@@ -105,6 +123,10 @@ router.get("/all/stats", getQuizStats);
  *     - Quiz
  *    description: Update a Quiz by ID
  *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *     - in: body
  *       name: quizData
  *       description: The Quiz object to create
@@ -138,7 +160,7 @@ router.get("/all/stats", getQuizStats);
  *      '400':
  *        description: Bad request
  */
-router.put("/:id", updateQuizById);
+router.put("/:id", protect, authorize("admin"), updateQuizById);
 /**
  * @swagger
  * /api/quiz/status/{id}:
@@ -147,6 +169,10 @@ router.put("/:id", updateQuizById);
  *     - Quiz
  *    description: Update Quiz Status
  *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *     - in: body
  *       name: quizData
  *       description: The Quiz object to create
@@ -169,7 +195,7 @@ router.put("/:id", updateQuizById);
  *      '400':
  *        description: Bad request
  */
-router.put("/status/:id", setQuizStatus);
+router.put("/status/:id", protect, authorize("admin"), setQuizStatus);
 /**
  * @swagger
  * /api/quiz/{id}:
@@ -178,6 +204,10 @@ router.put("/status/:id", setQuizStatus);
  *     - Quiz
  *    description: Delete Quiz by ID
  *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *     - in: path
  *       name: id
  *       schema:
@@ -191,6 +221,6 @@ router.put("/status/:id", setQuizStatus);
  *        description: Not Found
  */
 
-router.delete("/:qid", deleteQuizById);
+router.delete("/:qid", protect, authorize("admin"), deleteQuizById);
 
 module.exports = router;

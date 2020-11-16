@@ -1,6 +1,6 @@
 const express = require("express");
 const { createAttempt, getAllAttempts } = require("../controllers/attempt");
-const { protect } = require("../middleware/auth");
+const { protect, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -12,6 +12,10 @@ const router = express.Router();
  *     - Attempt
  *    description: Creates a new attempt
  *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *     - in: body
  *       name: attemptData
  *       description: The attempt to create
@@ -36,7 +40,7 @@ const router = express.Router();
  *      '400':
  *        description: Bad request
  */
-router.post("/", createAttempt);
+router.post("/", protect, authorize("admin", "employee"), createAttempt);
 /**
  * @swagger
  * /api/attempt:
@@ -44,9 +48,14 @@ router.post("/", createAttempt);
  *    tags:
  *     - Attempt
  *    description: Use to get all attempts
+ *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *    responses:
  *      '200':
  *        description: A successful response
  */
-router.get("/", getAllAttempts);
+router.get("/", protect, authorize("admin"), getAllAttempts);
 module.exports = router;

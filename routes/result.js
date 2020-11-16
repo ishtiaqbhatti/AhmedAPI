@@ -6,7 +6,7 @@ const {
   getQuizStats,
   getResultsByQuizId
 } = require("../controllers/result");
-const { protect } = require("../middleware/auth");
+const { protect, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -17,12 +17,17 @@ const router = express.Router();
  *    tags:
  *     - Result
  *    description: Get All Results
+ *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *    responses:
  *      '200':
  *        description: A successful response
  */
 
-router.get("/", getAllResults);
+router.get("/", protect, authorize("admin"), getAllResults);
 /**
  * @swagger
  * /api/result/employee/{id}:
@@ -31,6 +36,10 @@ router.get("/", getAllResults);
  *     - Result
  *    description: Get results by Employee ID
  *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *     - in: path
  *       name: id
  *       schema:
@@ -43,7 +52,12 @@ router.get("/", getAllResults);
  *      '404':
  *        description: Not Found
  */
-router.get("/employee/:id", getScorebyEmployee);
+router.get(
+  "/employee/:id",
+  protect,
+  authorize("admin", "employee"),
+  getScorebyEmployee
+);
 /**
  * @swagger
  * /api/result/employee/all/stats:
@@ -51,12 +65,22 @@ router.get("/employee/:id", getScorebyEmployee);
  *    tags:
  *     - Result
  *    description: Get All Attempt Stats by Users
+ *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *    responses:
  *      '200':
  *        description: A successful response
  */
 
-router.get("/employee/all/stats", getEmployeeAttemptStats);
+router.get(
+  "/employee/all/stats",
+  protect,
+  authorize("admin", "employee"),
+  getEmployeeAttemptStats
+);
 
 /**
  * @swagger
@@ -65,12 +89,17 @@ router.get("/employee/all/stats", getEmployeeAttemptStats);
  *    tags:
  *     - Result
  *    description: Get Quiz Result Stats
+ *    parameters:
+ *     - in: header
+ *       name: authorization
+ *       description: An authorization header (Bearer {{JWT}})
+ *       type: String
  *    responses:
  *      '200':
  *        description: A successful response
  */
 
-router.get("/quiz/stats", getQuizStats);
+router.get("/quiz/stats", protect, authorize("admin"), getQuizStats);
 
 // router.delete("/:qid", deleteQuestion);
 
